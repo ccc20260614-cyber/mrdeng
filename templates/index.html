@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MRDENG.SITE — 云控矩阵系统</title>
+<style>
+:root {
+  --bg: #090d16;
+  --surface: #111827;
+  --surface2: #161d2a;
+  --border: #1f2937;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --blue: #3b82f6;
+  --blue-bg: #1e3a5f;
+  --green: #10b981;
+  --green-bg: #064e3b;
+  --violet: #8b5cf6;
+  --violet-bg: #2e1065;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --radius: 4px;
+  --font: -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono: "SF Mono","Cascadia Code","Fira Code",monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  line-height:1.6;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* topbar */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 16px;height:52px;
+  gap:24px;
+}
+.topbar-logo{
+  font-weight:700;font-size:1rem;
+  letter-spacing:.05em;white-space:nowrap;
+  color:var(--text);
+}
+.topbar-logo span{color:var(--blue)}
+.topbar-tabs{
+  display:flex;gap:2px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.topbar-tabs::-webkit-scrollbar{display:none}
+.topbar-tab{
+  padding:8px 18px;border-radius:var(--radius);
+  font-size:.875rem;font-weight:500;color:var(--text3);
+  cursor:pointer;transition:color .15s,background .15s;
+  user-select:none;white-space:nowrap;
+  border:none;background:none;font-family:inherit;
+  min-height:36px;display:flex;align-items:center;
+}
+.topbar-tab:hover{color:var(--text2);background:rgba(255,255,255,.03)}
+.topbar-tab.active{color:var(--text);background:var(--blue-bg);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+/* main */
+.main{padding:16px;max-width:1200px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* stat cards row */
+.stat-row{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;margin-bottom:20px;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  padding:16px 20px;border-radius:var(--radius);
+}
+.stat-card .label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-card .value{font-size:2rem;font-weight:700;font-family:var(--mono);line-height:1.1}
+.stat-card:nth-child(1) .value{color:var(--blue)}
+.stat-card:nth-child(2) .value{color:var(--green)}
+.stat-card:nth-child(3) .value{color:var(--violet)}
+.stat-card .sub{font-size:.75rem;color:var(--text3);margin-top:2px}
+
+/* panel */
+.panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:16px;overflow:hidden;
+}
+.panel-header{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+}
+.panel-title{font-weight:600;font-size:.9rem;color:var(--text)}
+.panel-body{padding:0}
+.panel-body.padded{padding:12px 16px}
+
+/* table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:.825rem}
+th,td{padding:10px 14px;text-align:left;white-space:nowrap}
+th{
+  font-weight:600;font-size:.75rem;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1px solid var(--border);background:var(--surface2);
+}
+td{border-bottom:1px solid rgba(31,41,55,.6);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,.015)}
+.mono{font-family:var(--mono);font-size:.8rem}
+
+/* badges */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 10px;border-radius:999px;
+  font-size:.7rem;font-weight:600;line-height:1.8;
+}
+.badge-online{background:var(--green-bg);color:var(--green)}
+.badge-pending{background:rgba(234,179,8,.15);color:#eab308}
+.badge-offline{background:rgba(100,116,139,.2);color:var(--text3)}
+.badge-wifi{background:var(--violet-bg);color:var(--violet)}
+.badge-cell{background:var(--green-bg);color:var(--green)}
+.badge-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.badge-online .badge-dot{background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;border-radius:var(--radius);
+  font-size:.8rem;font-weight:500;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--text2);transition:all .15s;
+  font-family:inherit;line-height:1.4;
+  min-height:34px;white-space:nowrap;
+}
+.btn:hover{background:var(--surface2);color:var(--text);border-color:#334155}
+.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:#2563eb;border-color:#2563eb}
+.btn-sm{padding:4px 12px;font-size:.75rem;min-height:28px}
+.btn-danger{color:var(--red)}
+.btn-danger:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}
+.btn-icon{padding:6px;min-height:unset;width:32px;height:32px;justify-content:center}
+
+/* input / search */
+.input{
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--text);padding:7px 12px;border-radius:var(--radius);
+  font-size:.825rem;font-family:inherit;outline:none;
+  transition:border-color .15s;min-width:180px;
+}
+.input:focus{border-color:var(--blue)}
+.input::placeholder{color:var(--text3)}
+select.input{appearance:none;padding-right:28px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;background-size:18px;
+}
+
+/* log stream */
+.log-stream{
+  max-height:320px;overflow-y:auto;font-family:var(--mono);
+  font-size:.75rem;line-height:1.7;
+}
+.log-row{
+  display:flex;gap:10px;padding:5px 16px;
+  border-bottom:1px solid rgba(31,41,55,.4);
+}
+.log-row:last-child{border-bottom:none}
+.log-time{color:var(--text3);white-space:nowrap;min-width:60px}
+.log-device{color:var(--violet);white-space:nowrap}
+.log-msg{color:var(--text2);word-break:break-all}
+
+/* empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:2rem;margin-bottom:8px;opacity:.5}
+
+/* modal overlay */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.65);display:flex;
+  align-items:center;justify-content:center;padding:16px;
+}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);width:100%;max-width:520px;
+  max-height:85vh;overflow-y:auto;
+}
+.modal-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-weight:600;font-size:.9rem}
+.modal-close{
+  background:none;border:none;color:var(--text3);cursor:pointer;
+  font-size:1.2rem;padding:2px 6px;border-radius:var(--radius);
+}
+.modal-close:hover{color:var(--text);background:var(--surface2)}
+.modal-body{padding:16px 18px}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* code block */
+.code-block{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;
+  font-family:var(--mono);font-size:.75rem;color:var(--text2);
+  overflow-x:auto;white-space:pre-wrap;word-break:break-all;
+  margin:8px 0;
+}
+.code-block code{color:var(--green)}
+
+/* form */
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:.8rem;font-weight:500;color:var(--text2);margin-bottom:4px}
+.form-hint{font-size:.7rem;color:var(--text3);margin-top:3px}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* status bar */
+.tool-pane{display:none}.tool-pane.active{display:block}
+.statusbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:99;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 16px;display:flex;align-items:center;
+  justify-content:space-between;font-size:.7rem;color:var(--text3);
+}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;margin-right:6px;
+  display:inline-block;vertical-align:middle;
+}
+.status-dot.ok{background:var(--green)}
+.status-dot.err{background:var(--red);animation:pulse .8s infinite}
+
+/* toast */
+.toast-container{
+  position:fixed;top:64px;right:16px;z-index:300;
+  display:flex;flex-direction:column;gap:8px;
+}
+.toast{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 16px;
+  font-size:.8rem;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);
+  animation:slideIn .25s ease-out;max-width:340px;
+}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+@keyframes slideIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+
+/* responsive */
+@media(max-width:768px){
+  .topbar{padding:0 10px;gap:8px}
+  .topbar-logo{font-size:.85rem}
+  .topbar-tab{padding:6px 12px;font-size:.8rem}
+  .stat-row{grid-template-columns:1fr;gap:8px}
+  .stat-card{padding:12px 16px}
+  .stat-card .value{font-size:1.6rem}
+  .main{padding:10px}
+  .panel-header{padding:10px 12px}
+  th,td{padding:8px 10px;font-size:.75rem}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .input{min-width:unset;width:100%}
+  .modal{max-width:100%;margin:8px}
+  .log-stream{max-height:240px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-logo">MRDENG<span>.SITE</span></div>
+  <nav class="topbar-tabs" id="tabnav">
+    <button class="topbar-tab active" data-tab="overview">总览</button>
+    <button class="topbar-tab" data-tab="devices">设备</button>
+    <button class="topbar-tab" data-tab="tasks">任务</button>
+    <button class="topbar-tab" data-tab="tools">数据采集</button>
+    <button class="topbar-tab" data-tab="logs">日志</button>
+  </nav>
+  <div class="topbar-right">
+    <button class="btn btn-sm" onclick="showLicenses()">卡密</button>
+    <button class="btn btn-primary btn-sm" onclick="showAddDevice()">+ 添加设备</button>
+    <button class="btn btn-sm" onclick="refresh()" id="refreshBtn">刷新</button>
+    <button class="btn btn-sm btn-danger" onclick="logout()">退出</button>
+  </div>
+</header>
+
+<main class="main">
+  <!-- OVERVIEW TAB -->
+  <div class="tab-panel active" id="panel-overview">
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="label">总纳管设备</div>
+        <div class="value" id="stat-total">0</div>
+        <div class="sub">全量设备池</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">在线活跃</div>
+        <div class="value" id="stat-online">0</div>
+        <div class="sub">实时心跳在线</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">待执行任务</div>
+        <div class="value" id="stat-pending">0</div>
+        <div class="sub">任务队列堆积</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">最近审计日志</span>
+        <button class="btn btn-sm" onclick="switchTab('logs')">查看全部</button>
+      </div>
+      <div class="log-stream" id="overview-logs"></div>
+    </div>
+  </div>
+
+  <!-- DEVICES TAB -->
+  <div class="tab-panel" id="panel-devices">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">终端设备矩阵池</span>
+        <div class="toolbar">
+          <input class="input" type="text" placeholder="搜索设备 ID / IP / 卡密…" id="deviceSearch" oninput="renderDevices()">
+          <button class="btn btn-sm" onclick="refresh()">刷新</button>
+          <button class="btn btn-sm" onclick="showLicenses()">卡密</button>
+    <button class="btn btn-primary btn-sm" onclick="showAddDevice()">+ 添加设备</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>设备指纹 ID</th>
+              <th>授权卡密</th>
+              <th>当前出口 IP</th>
+              <th>网络类型</th>
+              <th>状态</th>
+              <th>最后心跳</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="device-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS TAB -->
+  <div class="tab-panel" id="panel-tasks">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">任务调度队列</span>
+        <div class="toolbar">
+          <button class="btn btn-sm" onclick="refresh()">刷新</button>
+          <button class="btn btn-primary btn-sm" onclick="showAddTask()">+ 新建任务</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>任务 ID</th>
+              <th>类型</th>
+              <th>目标 / Payload</th>
+              <th>状态</th>
+              <th>指派设备</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="task-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS TAB -->
+  <div class="tab-panel" id="panel-logs">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">AI 轨迹扰动与系统审计日志</span>
+        <button class="btn btn-sm" onclick="refresh()">刷新</button>
+      </div>
+      <div class="log-stream" id="log-stream" style="max-height:60vh"></div>
+    </div>
+  </div>
+
+  <!-- TOOLS TAB -->
+  <div class="tab-panel" id="panel-tools">
+    <!-- 选工具 -->
+    <div class="panel" style="margin-bottom:14px">
+      <div class="panel-header">
+        <span class="panel-title">数据采集</span>
+        <select class="input" id="toolSelect" onchange="switchTool()" style="width:auto;min-width:140px">
+          <option value="fetch">URL 抓取</option>
+          <option value="markitdown">格式转换</option>
+          <option value="autoscrape">智能爬取</option>
+        </select>
+      </div>
+
+      <!-- ===== URL 抓取 ===== -->
+      <div id="tool-fetch" class="tool-pane active">
+        <div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:10px 14px;margin:0 14px 10px">
+          <div style="font-size:.78rem;font-weight:600;margin-bottom:4px">这是什么？</div>
+          <div style="font-size:.73rem;color:var(--text2);line-height:1.6">
+            输入一个网址，模拟真实浏览器（Chrome/Safari/Firefox）拿到网页源码。适合查看需要登录才能看的内容、绕过简单的反爬检测。
+          </div>
+        </div>
+        <div style="padding:0 14px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <input class="input" type="text" id="toolFetchUrl" placeholder="目标网址 https://httpbin.org/ip" style="flex:1;min-width:160px">
+          <select class="input" id="toolFetchImp" style="width:auto;min-width:100px">
+            <option value="chrome110">伪装 Chrome</option>
+            <option value="safari15_5">伪装 Safari</option>
+            <option value="firefox102">伪装 Firefox</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="toolFetch()" id="fetchBtn">开始抓取</button>
+        </div>
+        <div id="toolFetchResult" style="padding:0 14px 10px;display:none">
+          <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">结果</div>
+          <div id="toolFetchContent" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;max-height:250px;overflow:auto;white-space:pre-wrap;font-size:.73rem;word-break:break-all"></div>
+        </div>
+      </div>
+
+      <!-- ===== 格式转换 ===== -->
+      <div id="tool-markitdown" class="tool-pane">
+        <div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:10px 14px;margin:0 14px 10px">
+          <div style="font-size:.78rem;font-weight:600;margin-bottom:4px">这是什么？</div>
+          <div style="font-size:.73rem;color:var(--text2);line-height:1.6">
+            把一个网页、PDF文档、Word文档、Excel表格、图片……统统转成纯净的 Markdown 文本。粘贴一个公开文件的 URL 就行。支持：网页/PDF/DOCX/XLSX/PPTX/图片。
+          </div>
+        </div>
+        <div style="padding:0 14px 10px;display:flex;gap:8px;align-items:flex-end">
+          <input class="input" type="text" id="toolMdUrl" placeholder="文件 URL  https://example.com/report.pdf" style="flex:1;min-width:160px">
+          <button class="btn btn-primary btn-sm" onclick="toolMarkitdown()" id="mdBtn">开始转换</button>
+        </div>
+        <div id="toolMdResult" style="padding:0 14px 10px;display:none">
+          <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.72rem;color:var(--text3)">Markdown 结果</span>
+            <button class="btn btn-sm" onclick="copyMdResult()">复制</button>
+          </div>
+          <div id="toolMdContent" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;max-height:300px;overflow:auto;font-size:.73rem;white-space:pre-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ===== 智能爬取 ===== -->
+      <div id="tool-autoscrape" class="tool-pane">
+        <div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:10px 14px;margin:0 14px 10px">
+          <div style="font-size:.78rem;font-weight:600;margin-bottom:4px">这是什么？</div>
+          <div style="font-size:.73rem;color:var(--text2);line-height:1.6">
+            你告诉它"我要网页上这几个东西"，它自动学会抓取规则，把整页同类数据全部提取出来。<br>
+            <b>用法很简单：</b>填网址 → 在「示例内容」里写 2-3 个你想抓的值 → 点开始。比如你想抓商品价格，就在示例里写几个价格数字，它会自动找出整页所有价格。
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:8px 14px;margin:0 14px 10px">
+          <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">示例：抓取商品价格</div>
+          <div style="font-size:.7rem;color:var(--text2);line-height:1.5">
+            网址：<code style="background:var(--bg);padding:1px 4px;border-radius:3px">https://books.toscrape.com/</code><br>
+            示例内容（每行一个价格）：<br>
+            <code style="background:var(--bg);padding:1px 4px;border-radius:3px">£51.77</code><br>
+            <code style="background:var(--bg);padding:1px 4px;border-radius:3px">£53.74</code><br>
+            <code style="background:var(--bg);padding:1px 4px;border-radius:3px">£50.10</code><br>
+            结果：整页所有书籍价格一次性返回
+          </div>
+        </div>
+        <div style="padding:0 14px 10px">
+          <input class="input" type="text" id="toolAsUrl" placeholder="目标网址" style="width:100%;margin-bottom:8px">
+          <textarea class="input" id="toolAsSample" rows="3" placeholder="示例内容（每行一个你想抓取的值）" style="width:100%;resize:vertical;margin-bottom:8px"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="toolAutoScrape()" id="asBtn">开始爬取</button>
+        </div>
+        <div id="toolAsResult" style="padding:0 14px 10px;display:none">
+          <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">结果</div>
+          <div id="toolAsContent" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;max-height:250px;overflow:auto;white-space:pre-wrap;font-size:.73rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<footer class="statusbar">
+  <span>
+    <span class="status-dot ok" id="statusDot"></span>
+    <span id="statusText">已连接</span>
+  </span>
+  <span>最后刷新: <span id="lastRefresh">--</span></span>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ADD DEVICE MODAL -->
+<div class="modal-overlay" id="modalDevice" style="display:none" onclick="if(event.target===this)closeModal('modalDevice')">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title">添加新设备</span>
+      <button class="modal-close" onclick="closeModal('modalDevice')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- 最简单方式：直接填名字注册 -->
+      <div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px">
+        <div style="font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:8px">快速注册 — 输入设备名称即可</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="input" type="text" id="quickDeviceName" placeholder="例如：我的手机" style="flex:1;min-width:140px">
+          <button class="btn btn-primary" onclick="quickRegister()" id="quickRegBtn">注册设备</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text2);margin-top:6px">
+          或直接打开此链接注册：<a href="https://mrdeng.site/api/device/quick-register?license_code=STUDIO-PRO-8888" style="color:var(--blue)" target="_blank">https://mrdeng.site/api/device/quick-register</a>
+        </div>
+      </div>
+
+      <!-- 二维码 + 代码 -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="flex:0 0 auto;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+          <div style="width:120px;height:120px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:4px" id="qrcodeContainer">
+            <span style="color:var(--text3);font-size:.7rem">加载中...</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--text2)">扫码绑定</div>
+          <button class="btn btn-sm" style="margin-top:6px" onclick="refreshQR()" id="qrRefreshBtn">刷新</button>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text3);margin-bottom:4px">ADB 连接 (Android)</div>
+            <div class="code-block" style="margin:0;font-size:.7rem"><code>adb connect &lt;设备IP&gt;:5555
+adb shell "curl -X POST https://mrdeng.site/api/device/heartbeat \
+  -H 'Content-Type: application/json' \
+  -d '{\"device_id\":\"ANDROID\",\"license_code\":\"STUDIO-PRO-8888\",\"network_type\":\"wifi\"}'"</code></div>
+          </div>
+          <div style="font-size:.7rem;color:var(--text3)">
+            设备需开启 USB 调试，同一局域网执行 <code style="color:var(--green)">adb tcpip 5555</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEVICE DETAIL MODAL -->
+<div class="modal-overlay" id="modalDetail" style="display:none" onclick="if(event.target===this)closeModal('modalDetail')">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="detailTitle">设备详情</span>
+      <button class="modal-close" onclick="closeModal('modalDetail')">×</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- LICENSES MODAL -->
+<div class="modal-overlay" id="modalLicenses" style="display:none" onclick="if(event.target===this)closeModal('modalLicenses')">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <span class="modal-title">授权卡密管理</span>
+      <button class="modal-close" onclick="closeModal('modalLicenses')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Create form -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:14px">
+        <div style="font-size:.75rem;font-weight:600;margin-bottom:8px;color:var(--text3)">生成新卡密</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:90px">
+            <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">授权等级</div>
+            <select class="input" id="newLicenseTier" style="width:100%">
+              <option value="basic">基础版（3设备/30天）</option>
+              <option value="studio">专业版（10设备/180天）</option>
+              <option value="pro">旗舰版（50设备/365天）</option>
+              <option value="ultimate">至尊版（无限制）</option>
+            </select>
+          </div>
+          <div style="width:60px">
+            <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">设备数</div>
+            <input class="input" type="number" id="newLicenseLimit" value="3" style="width:100%">
+          </div>
+          <div style="width:60px">
+            <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">天数</div>
+            <input class="input" type="number" id="newLicenseDays" value="30" style="width:100%">
+          </div>
+          <div style="flex:1;min-width:100px">
+            <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">备注说明</div>
+            <input class="input" type="text" id="newLicenseDesc" placeholder="如：张三团队" style="width:100%">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="createLicense()" style="white-space:nowrap">生成卡密</button>
+        </div>
+      </div>
+      <!-- List -->
+      <div id="license-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LICENSE DETAIL MODAL -->
+<div class="modal-overlay" id="modalLicenseDetail" style="display:none" onclick="if(event.target===this)closeModal('modalLicenseDetail')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="licenseDetailTitle">卡密详情</span>
+      <button class="modal-close" onclick="closeModal('modalLicenseDetail')">&times;</button>
+    </div>
+    <div class="modal-body" id="licenseDetailBody"></div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+
+<script>
+function showLicenses() {
+  openModal('modalLicenses');
+  renderLicenseList();
+}
+function renderLicenseList() {
+  fetch('/api/licenses').then(r=>r.json()).then(data=>{
+    const tiers = data.tiers || {};
+    let html = '';
+    for (const l of data.licenses) {
+      const tdef = tiers[l.tier] || {};
+      const used = l.used_count || 0;
+      const total = l.device_limit === -1 ? '不限' : l.device_limit;
+      const created = l.created_at ? new Date(l.created_at*1000).toLocaleString('zh-CN') : '--';
+      const expire = l.expire_time ? new Date(l.expire_time*1000).toLocaleString('zh-CN') : '永久';
+      const expired = l.expire_time > 0 && l.expire_time < Date.now()/1000;
+      const statusClass = l.status==='active'&&!expired ? 'badge-online' : 'badge-offline';
+      const statusText = l.status==='active'&&!expired ? '有效' : (expired?'已过期':'已禁用');
+      const tierColor = tdef.color || '#6b7280';
+      html += `<div class="license-card" style="border-left:3px solid ${tierColor};background:var(--bg2);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:600;font-size:.85rem"><span class="mono">${esc(l.code)}</span> <span class="badge" style="background:${tierColor}20;color:${tierColor}">${esc(tdef.name||l.tier)}</span> <span class="badge ${statusClass}">${statusText}</span></div>
+            <div style="font-size:.7rem;color:var(--text3);margin-top:4px">
+              设备：${used} / ${total} &nbsp;|&nbsp; 创建：${created} &nbsp;|&nbsp; 到期：${expire}
+            </div>
+            ${l.description ? '<div style="font-size:.7rem;color:var(--text3);margin-top:2px">备注：'+esc(l.description)+'</div>' : ''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="btn btn-sm" onclick="showLicenseDetail('${esc(l.code)}')">详情</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteLicense('${esc(l.code)}')">删除</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    document.getElementById('license-list').innerHTML = html || '<div class="empty">暂无卡密，请上方生成</div>';
+  });
+}
+function showLicenseDetail(code) {
+  fetch('/api/license/'+encodeURIComponent(code)+'/detail').then(r=>r.json()).then(data=>{
+    const l = data.license;
+    const devs = data.devices || [];
+    const tiers = {basic:'基础版',studio:'专业版',pro:'旗舰版',ultimate:'至尊版'};
+    const created = l.created_at ? new Date(l.created_at*1000).toLocaleString('zh-CN') : '--';
+    const expire = l.expire_time ? new Date(l.expire_time*1000).toLocaleString('zh-CN') : '永久';
+    document.getElementById('licenseDetailTitle').textContent = '卡密详情：' + code;
+    let devHtml = '';
+    for (const d of devs) {
+      const time = d.last_heartbeat ? new Date(d.last_heartbeat*1000).toLocaleString('zh-CN') : '--';
+      devHtml += '<tr><td class="mono">'+esc(d.device_id)+'</td><td class="mono">'+esc(d.ip_address)+'</td><td>'+esc(d.status)+'</td><td>'+time+'</td></tr>';
+    }
+    document.getElementById('licenseDetailBody').innerHTML =
+      '<table style="font-size:.78rem;margin-bottom:16px">'+
+      '<tr><td style="color:var(--text3);width:60px">卡密</td><td class="mono">'+esc(l.code)+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">等级</td><td>'+esc(tiers[l.tier]||l.tier)+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">设备</td><td>'+(l.used_count||0)+' / '+(l.device_limit===-1?'不限':l.device_limit)+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">创建</td><td>'+created+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">到期</td><td>'+expire+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">备注</td><td>'+esc(l.description||'无')+'</td></tr>'+
+      '</table>'+
+      '<div style="font-size:.75rem;font-weight:600;margin-bottom:6px">已绑定设备 ('+devs.length+'台)</div>'+
+      '<div class="table-wrap"><table><thead><tr><th>设备ID</th><th>IP</th><th>状态</th><th>最后心跳</th></tr></thead><tbody>'+
+      (devHtml||'<tr><td colspan="4"><div class="empty">暂无绑定设备</div></td></tr>')+
+      '</tbody></table></div>';
+    openModal('modalLicenseDetail');
+  });
+}
+function deleteLicense(code) {
+  if (!confirm('确定删除卡密 '+code+' ？')) return;
+  fetch('/api/license/'+encodeURIComponent(code)+'/delete', {method:'POST'})
+    .then(r=>r.json()).then(d=>{
+      toast(d.message||d.error||'已删除', d.status==='ok'?'success':'error');
+      renderLicenseList();
+    });
+}
+function createLicense() {
+  const tier = document.getElementById('newLicenseTier').value;
+  const limit = document.getElementById('newLicenseLimit').value;
+  const days = document.getElementById('newLicenseDays').value;
+  const desc = document.getElementById('newLicenseDesc').value;
+  fetch('/api/license/create', {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({tier,device_limit:parseInt(limit),days:parseInt(days),description:desc})})
+    .then(r=>r.json()).then(d=>{toast('卡密已生成：'+d.code,'success');renderLicenseList()});
+}
+
+function showAddTask() { openModal('modalTask'); }
+
+
+// ====== Modal helpers ======
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ====== Toast ======
+function toast(msg, type) {
+  var c = document.getElementById('toastContainer');
+  var el = document.createElement('div');
+  el.style.cssText = 'padding:8px 16px;border-radius:4px;margin:4px 0;font-size:.8rem;color:#fff;' +
+    (type==='success'?'background:#065f46':type==='error'?'background:#7f1d1d':'background:#1e3a5f');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function(){ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(function(){ el.remove(); }, 300); }, 2500);
+}
+
+// ====== Tab switching ======
+function switchTab(tab) {
+  document.querySelectorAll('.topbar-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'overview') fetchStats();
+  if (tab === 'devices') renderDevices();
+  if (tab === 'tasks') renderTasks();
+  if (tab === 'logs') renderLogs();
+}
+
+// ====== Data fetch ======
+var appState = { stats: {}, devices: [] };
+
+function refresh() {
+  var btn = document.getElementById('refreshBtn');
+  btn.textContent = '刷新中...';
+  btn.disabled = true;
+  fetch('/api/stats')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      appState.stats = d;
+      appState.devices = d.devices || [];
+      document.getElementById('stat-total').textContent = d.total_devices || 0;
+      document.getElementById('stat-online').textContent = (d.devices||[]).filter(function(x){return x.status==='online'}).length;
+      document.getElementById('stat-pending').textContent = d.pending_tasks || 0;
+      document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString('zh-CN');
+      // recent logs
+      var logHtml = '';
+      (d.logs||[]).slice(-8).forEach(function(l){
+        logHtml += '<div style="font-size:.72rem;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">' + esc(l.device_id) + '</span> ' + esc(l.message) + '</div>';
+      });
+      document.getElementById('overview-logs').innerHTML = logHtml || '<div class="empty">暂无日志</div>';
+      btn.textContent = '刷新'; btn.disabled = false;
+    })
+    .catch(function(){ btn.textContent = '刷新'; btn.disabled = false; });
+}
+
+function fetchStats() { refresh(); }
+
+// ====== Devices ======
+function renderDevices() {
+  var tbody = document.getElementById('device-tbody');
+  var q = (document.getElementById('deviceSearch').value || '').toLowerCase();
+  var devs = appState.devices;
+  if (q) devs = devs.filter(function(d){ return (d.device_id||'').toLowerCase().indexOf(q) >= 0; });
+  if (!devs.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty">暂无设备</div></td></tr>'; return; }
+  var html = '';
+  devs.forEach(function(d){
+    var hb = d.last_heartbeat ? new Date(d.last_heartbeat*1000).toLocaleString('zh-CN') : '--';
+    var sb = d.status === 'online' ? '<span class="badge badge-online">在线</span>' : '<span class="badge badge-offline">离线</span>';
+    html += '<tr><td class="mono">' + esc(d.device_id) + '</td><td class="mono">' + esc(d.ip_address) + '</td><td>' + esc(d.license_code) + '</td><td>' + sb + '</td><td>' + hb + '</td><td>' +
+      '<button class="btn btn-sm" onclick="deviceDetail(\'' + esc(d.device_id) + '\')">详情</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deviceUnbind(\'' + esc(d.device_id) + '\')">解绑</button></td></tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function showAddDevice() {
+  document.getElementById('quickDeviceName').value = '';
+  document.getElementById('statusDot').style.background = '#64748b';
+  document.getElementById('statusText').textContent = '等待注册';
+  openModal('modalDevice');
+}
+
+function quickRegister() {
+  var name = document.getElementById('quickDeviceName').value.trim();
+  var btn = document.getElementById('quickRegBtn');
+  if (!name) { toast('请输入设备名称', 'error'); return; }
+  btn.textContent = '注册中...'; btn.disabled = true;
+  fetch('/api/device/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_name:name}) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.status === 'success') {
+        toast('注册成功：' + (d.device_id || name), 'success');
+        document.getElementById('statusDot').style.background = '#10b981';
+        document.getElementById('statusText').textContent = '已注册';
+        document.getElementById('qrcodeContainer').innerHTML = '<div style="text-align:center;padding:12px;font-size:.75rem">设备ID:<br><span class="mono" style="font-size:1rem">' + esc(d.device_id) + '</span></div>';
+      } else { toast('注册失败', 'error'); }
+      btn.textContent = '快速注册'; btn.disabled = false;
+      refresh();
+    })
+    .catch(function(){ toast('网络错误', 'error'); btn.textContent = '快速注册'; btn.disabled = false; });
+}
+
+function refreshQR() {
+  var name = document.getElementById('quickDeviceName').value.trim() || 'AUTO-' + Date.now().toString(36);
+  fetch('/api/device/bind-qrcode?device_id=' + encodeURIComponent(name))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('qrcodeContainer').innerHTML = '<div style="text-align:center;font-size:.75rem">扫码绑定<br><span class="mono">' + esc(d.device_id || name) + '</span></div>';
+    });
+}
+
+function deviceDetail(id) {
+  fetch('/api/device/' + encodeURIComponent(id) + '/detail')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var dev = d.device || {};
+      var hb = dev.last_heartbeat ? new Date(dev.last_heartbeat*1000).toLocaleString('zh-CN') : '--';
+      var logH = '';
+      (d.logs||[]).forEach(function(l){
+        var lt = l.created_at ? new Date(l.created_at*1000).toLocaleString('zh-CN') : '--';
+        logH += '<div style="font-size:.72rem;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">' + lt + '</span> <span style="color:var(--blue)">' + esc(l.log_type) + '</span> ' + esc(l.message) + '</div>';
+      });
+      document.getElementById('detailBody').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem;margin-bottom:12px">' +
+        '<div><span style="color:var(--text3)">设备ID</span><br><span class="mono">' + esc(dev.device_id) + '</span></div>' +
+        '<div><span style="color:var(--text3)">卡密</span><br><span class="mono">' + esc(dev.license_code) + '</span></div>' +
+        '<div><span style="color:var(--text3)">IP</span><br><span class="mono">' + esc(dev.ip_address) + '</span></div>' +
+        '<div><span style="color:var(--text3)">状态</span><br>' + (dev.status||'--') + '</div>' +
+        '<div><span style="color:var(--text3)">最后心跳</span><br>' + hb + '</div>' +
+        '</div>' +
+        '<div style="font-size:.75rem;font-weight:600;margin-bottom:6px">最近日志</div>' +
+        '<div>' + (logH || '<div style="color:var(--text3);font-size:.72rem">暂无日志</div>') + '</div>';
+      openModal('modalDetail');
+    }).catch(function(){ toast('加载失败','error'); });
+}
+
+function deviceUnbind(id) {
+  if (!confirm('确定解绑设备 ' + id + ' ？')) return;
+  fetch('/api/device/' + encodeURIComponent(id) + '/unbind', { method:'POST' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ toast(d.message||'已解绑', 'success'); refresh(); renderDevices(); })
+    .catch(function(){ toast('解绑失败','error'); });
+}
+
+// ====== Tasks ======
+function renderTasks() {
+  var tbody = document.getElementById('task-tbody');
+  fetch('/api/tasks/list')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.tasks || !d.tasks.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty">暂无任务</div></td></tr>'; return; }
+      var labels = {pending:'待执行', running:'执行中', completed:'已完成', cancelled:'已取消'};
+      var cls = {pending:'badge-pending', running:'badge-online', completed:'badge-offline', cancelled:'badge-offline'};
+      var h = '';
+      d.tasks.forEach(function(t){
+        h += '<tr><td class="mono">' + t.task_id + '</td><td>' + esc(t.task_type) + '</td>' +
+          '<td style="font-size:.72rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.payload||'') + '</td>' +
+          '<td><span class="badge ' + (cls[t.status]||'') + '">' + (labels[t.status]||t.status) + '</span></td>' +
+          '<td class="mono">' + esc(t.assigned_device||'--') + '</td><td>';
+        if (t.status === 'pending') {
+          h += '<button class="btn btn-sm" onclick="taskAction(' + t.task_id + ',\'complete\')">完成</button> ' +
+               '<button class="btn btn-sm btn-danger" onclick="taskAction(' + t.task_id + ',\'cancel\')">取消</button>';
+        }
+        h += '</td></tr>';
+      });
+      tbody.innerHTML = h;
+    });
+}
+
+function taskAction(id, action) {
+  fetch('/api/task/' + id + '/' + action, { method:'POST' })
+    .then(function(){ renderTasks(); refresh(); });
+}
+
+function showAddTask() { openModal('modalTask'); }
+
+function createTask() {
+  var type = document.getElementById('taskType').value;
+  var url = document.getElementById('taskUrl').value;
+  var dur = document.getElementById('taskDuration').value;
+  if (!url) { toast('请输入目标 URL', 'error'); return; }
+  fetch('/api/task/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({task_type:type, target:url, duration:parseInt(dur)||60}) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.status === 'ok') { toast('任务已创建', 'success'); closeModal('modalTask'); document.getElementById('taskUrl').value=''; renderTasks(); refresh(); }
+      else { toast('创建失败', 'error'); }
+    });
+}
+
+// ====== Logs ======
+function renderLogs() {
+  fetch('/api/stats').then(function(r){ return r.json(); }).then(function(d){
+    var h = '';
+    (d.logs||[]).slice(-30).forEach(function(l){
+      var lt = l.created_at ? new Date(l.created_at*1000).toLocaleString('zh-CN') : '--';
+      h += '<div style="font-size:.72rem;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">' + lt + '</span> <span style="color:var(--blue)">' + esc(l.log_type) + '</span> [' + esc(l.device_id) + '] ' + esc(l.message) + '</div>';
+    });
+    document.getElementById('log-stream').innerHTML = h || '<div class="empty">暂无日志</div>';
+  });
+}
+
+// ====== Data Tools ======
+function selectTool(name) {
+  document.querySelectorAll('.tool-panel').forEach(function(p){ p.style.display = 'none'; });
+  var el = document.getElementById('tool-' + name);
+  if (el) el.style.display = 'block';
+}
+
+function toolFetch() {
+  var url = document.getElementById('toolFetchUrl').value.trim();
+  var btn = document.getElementById('fetchBtn');
+  if (!url) { toast('请输入URL', 'error'); return; }
+  btn.textContent = '抓取中...'; btn.disabled = true;
+  fetch('/api/tools/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url,impression:document.getElementById('toolFetchImp').value.trim()||null}) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('toolFetchContent').value = d.content || d.error || '';
+      document.getElementById('toolFetchResult').innerHTML = '<span style="color:#10b981">抓取完成，' + (d.content_length||(d.content||'').length) + ' 字符</span>';
+      btn.textContent = '抓取'; btn.disabled = false;
+    }).catch(function(e){ toast('抓取失败','error'); btn.textContent = '抓取'; btn.disabled = false; });
+}
+
+function toolMarkitdown() {
+  var url = document.getElementById('toolMdUrl').value.trim();
+  var btn = document.getElementById('mdBtn');
+  if (!url) { toast('请输入URL', 'error'); return; }
+  btn.textContent = '转换中...'; btn.disabled = true;
+  fetch('/api/tools/markitdown', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url}) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('toolMdContent').value = d.content || d.error || '';
+      document.getElementById('toolMdResult').innerHTML = '<span style="color:#10b981">转换完成</span>';
+      btn.textContent = '转换'; btn.disabled = false;
+    }).catch(function(){ toast('转换失败','error'); btn.textContent = '转换'; btn.disabled = false; });
+}
+
+function copyMdResult() {
+  var el = document.getElementById('toolMdContent');
+  el.select();
+  try { navigator.clipboard.writeText(el.value); toast('已复制', 'success'); } catch(e) { toast('复制失败，请手动选择', 'error'); }
+}
+
+function toolAutoScrape() {
+  var url = document.getElementById('toolAsUrl').value.trim();
+  var sample = document.getElementById('toolAsSample').value.trim();
+  var btn = document.getElementById('asBtn');
+  if (!url) { toast('请输入URL', 'error'); return; }
+  btn.textContent = '爬取中...'; btn.disabled = true;
+  fetch('/api/tools/autoscrape', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url, sample_text:sample||null}) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('toolAsContent').value = JSON.stringify(d.results||d, null, 2);
+      document.getElementById('toolAsResult').innerHTML = '<span style="color:#10b981">爬取完成</span>';
+      btn.textContent = '爬取'; btn.disabled = false;
+    }).catch(function(){ toast('爬取失败','error'); btn.textContent = '爬取'; btn.disabled = false; });
+}
+
+function esc(s) { if (!s) return ""; var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function logout() { document.cookie = "mrdeng_auth=;max-age=0;path=/"; location.href = "/login"; }
+</script>
+</body>
+</html>
